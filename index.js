@@ -14,8 +14,9 @@ var Game = require('./app/model/Game')
 
 var routerApi = express.Router()
 
-routerApi
-    .post('/games', function(req,res){
+
+routerApi.route('/games')
+    .post( function(req,res){
         var game = new Game()
         game.name = req.body.name
         game.description = req.body.description
@@ -28,7 +29,7 @@ routerApi
         })
 
     })
-    .get('/games', function(req,res){
+    .get(function(req,res){
         Game.find(function(err, games){
             if(err)
                 res.send(err)
@@ -37,9 +38,57 @@ routerApi
         })
     })
 
-routerApi.get('/games/:gameId', function(req,res){
-    res.send(req.params)
-})
+routerApi.route('/games/:gameId')
+    .get(function(req,res){
+
+        Game.findById(req.params.gameId, function(err, game){
+            if(err)
+                res.send(err)
+            
+            res.json(game)
+        })
+    })
+    .post(async function(req,res){
+        try{
+            const game = await Game.findById(req.params.gameId)
+
+            game.name = req.body.name ? req.body.name : game.name
+            game.description = req.body.description ? req.body.description : game.description
+
+            await game.save()
+            res.json({message:game.name + " updated!"})
+
+        }catch(err){
+            res.status(500).send(err)
+        }
+
+        // Game.findById(req.params.gameId, function(err, game){
+        //     if(err)
+        //         res.send(err)
+            
+        //     if(game == null)
+        //         res.send({message:"object not found"})
+            
+        //     game.name = req.body.name ? req.body.name : game.name
+        //     game.description = req.body.description ? req.body.description : game.description
+
+        //     game.save(function(err){
+        //         if(err)
+        //             res.send(err)
+
+        //         res.json({message:game.name + " updated!"})
+        //     })
+        // })
+    })
+    .delete(async function(req,res){
+        try{
+            await Game.remove({_id:req.params.gameId})
+            res.json({message: "Game has been deleted"})
+        }catch(err)
+        {
+            res.status(500).send(err)
+        }
+    })
 
 app.use('/api', routerApi)
 
